@@ -1,33 +1,40 @@
 module.exports = loader
 
+const versionCache = {};
+
 function loader (mcVersion) {
-  const mcData = require('minecraft-data')(mcVersion)
-  Biome = require('prismarine-biome')(mcVersion)
-  blocks = mcData.blocks
-  blocksByStateId = mcData.blocksByStateId
-  toolMultipliers = mcData.materials
-  return Block
+  if (versionCache[mcVersion] === undefined) {
+    let mcData = require('minecraft-data')(mcVersion);
+    let versioned = {
+        Biome: require('prismarine-biome')(mcVersion),
+        blocks: mcData.blocks,
+        blocksByStateId: mcData.blocksByStateId,
+        toolMultipliers: mcData.materials
+    }
+    versionCache[mcVersion] = class extends Block {
+      constructor(type, biomeId, metadata, stateId) {
+        super(type, biomeId, metadata, stateId, versioned);
+      }
+    };
+    Object.defineProperty (versionCache[mcVersion], "name", {value: `Block_${mcVersion.replace(/\./g, "_")}`});
+    versionCache[mcVersion].fromStateId = function (stateId, biomeId) {
+      return new versionCache[mcVersion](undefined, biomeId, 0, stateId)
+    }
+  }
+  return versionCache[mcVersion];
 }
 
-let Biome
-let blocks
-let blocksByStateId
-let toolMultipliers
-
-Block.fromStateId = function (stateId, biomeId) {
-  return new Block(undefined, biomeId, 0, stateId)
-}
-
-function Block (type, biomeId, metadata, stateId) {
+function Block (type, biomeId, metadata, stateId, versioned) {
   this.type = type
   this.metadata = metadata
   this.light = 0
   this.skyLight = 0
-  this.biome = new Biome(biomeId)
+  this.biome = new versioned.Biome(biomeId)
   this.position = null
   this.stateId = stateId
+  this._versioned = versioned;
 
-  const blockEnum = stateId === undefined ? blocks[type] : blocksByStateId[stateId]
+  const blockEnum = stateId === undefined ? versioned.blocks[type] : versioned.blocksByStateId[stateId]
   if (blockEnum) {
     if (stateId === undefined) {
       this.stateId = blockEnum.minStateId
@@ -71,7 +78,7 @@ Block.prototype.digTime = function (heldItemType, creative, inWater, notOnGround
   if (!this.canHarvest(heldItemType)) { return time * 10 / 3 }
 
   // If the tool helps, then it increases digging speed by a constant multiplier
-  const toolMultiplier = toolMultipliers[this.material]
+  const toolMultiplier = this._versioned.toolMultipliers[this.material]
   if (toolMultiplier && heldItemType) {
     const multiplier = toolMultiplier[heldItemType]
     if (multiplier) time /= multiplier
