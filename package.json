@@ -9,10 +9,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/PrismarineJS/prismarine-block.git"
+    "url": "https://github.com/Cecer/prismarine-block.git"
   },
   "dependencies": {
-    "prismarine-biome": "^1.0.0"
+    "prismarine-biome": "Cecer/prismarine-biome"
   },
   "peerDependencies": {
     "minecraft-data": "^2.0.0"
