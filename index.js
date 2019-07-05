@@ -15,11 +15,12 @@ function loader (mcVersion) {
       constructor(type, biomeId, metadata, stateId) {
         super(type, biomeId, metadata, stateId, versioned);
       }
+
+      static fromStateId (stateId, biomeId) {
+        return new versionCache[mcVersion](undefined, biomeId, 0, stateId)
+      }
     };
     Object.defineProperty (versionCache[mcVersion], "name", {value: `Block_${mcVersion.replace(/\./g, "_")}`});
-    versionCache[mcVersion].fromStateId = function (stateId, biomeId) {
-      return new versionCache[mcVersion](undefined, biomeId, 0, stateId)
-    }
   }
   return versionCache[mcVersion];
 }
